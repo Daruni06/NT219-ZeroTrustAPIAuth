@@ -45,9 +45,23 @@
         "access.token.lifespan": "300"
       },
       "defaultClientScopes": [
+        "basic",
         "profile",
         "email",
         "roles"
+      ],
+      "protocolMappers": [
+        {
+          "name": "demo-client audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "demo-client",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
       ],
       "optionalClientScopes": [
         "offline_access"
