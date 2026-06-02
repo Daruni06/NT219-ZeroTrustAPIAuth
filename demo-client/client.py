@@ -141,10 +141,15 @@ def verify_with_authz(
 
 
 def call_backend(url: str):
-    response = httpx.get(url, timeout=10)
-
     print("\n[BACKEND]")
     print("GET", url)
+    try:
+        response = httpx.get(url, timeout=10)
+    except httpx.ConnectError as exc:
+        print("Status: unavailable")
+        print(f"Body: backend is not running or not reachable ({exc})")
+        return
+
     print("Status:", response.status_code)
     print("Body:", response.text)
 
