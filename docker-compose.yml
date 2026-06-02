@@ -1,6 +1,6 @@
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    image: quay.io/keycloak/keycloak:26.4
     command:
       - start-dev
       - --import-realm
@@ -53,7 +53,7 @@ services:
       dockerfile: authz/Dockerfile
     environment:
       AUTHZ_CONFIG_PATH: /app/authz/config.yaml
-      KEYCLOAK_ISSUER: http://keycloak:8080/realms/zero-trust
+      KEYCLOAK_ISSUER: http://127.0.0.1:8080/realms/zero-trust
       KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/zero-trust/protocol/openid-connect/certs
       KEYCLOAK_AUDIENCE: demo-client
       OPA_DECISION_URL: http://opa:8181/v1/data/zerotrust/authz/allow
