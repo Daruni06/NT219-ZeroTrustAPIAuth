@@ -1,0 +1,2 @@
+# Runtime TLS certificates live in this directory.
+# Do not commit real certificate or private key files.

@@ -1,0 +1,42 @@
+# ext_authz service configuration for local/dev.
+# Environment variables may override these values in the Python implementation.
+
+server:
+  host: "0.0.0.0"
+  port: 8090
+
+keycloak:
+  issuer: "http://localhost:8080/realms/zero-trust"
+  jwks_url: "http://localhost:8080/realms/zero-trust/protocol/openid-connect/certs"
+  audience: "demo-client"
+  algorithms:
+    - "EdDSA"
+    - "RS256"
+  jwks_cache_seconds: 300
+
+dpop:
+  required: true
+  max_clock_skew_seconds: 60
+  proof_lifetime_seconds: 300
+  require_ath: true
+
+redis:
+  url: "redis://localhost:6379/0"
+  password: ""
+  replay_prefix: "dpop:jti:"
+  replay_ttl_seconds: 300
+
+opa:
+  decision_url: "http://localhost:8181/v1/data/zerotrust/authz/allow"
+  timeout_seconds: 2
+
+authz:
+  fail_closed: true
+  forwarded_identity_headers:
+    user_id: "x-user-id"
+    username: "x-user-name"
+    roles: "x-user-roles"
+    scopes: "x-scopes"
+
+logging:
+  level: "INFO"

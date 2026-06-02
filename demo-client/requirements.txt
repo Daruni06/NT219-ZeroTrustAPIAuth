@@ -1,0 +1,4 @@
+# Python dependencies for the demo client.
+cryptography
+httpx
+requests-oauthlib

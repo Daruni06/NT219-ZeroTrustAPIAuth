@@ -1,0 +1,8 @@
+{
+  "user_id": "admin-id",
+  "username": "admin",
+  "roles": ["user", "admin"],
+  "scopes": ["profile", "email"],
+  "method": "GET",
+  "path": "/admin/users"
+}

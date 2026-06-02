@@ -1,0 +1,8 @@
+{
+  "user_id": "alice-id",
+  "username": "alice",
+  "roles": ["user"],
+  "scopes": ["profile", "email"],
+  "method": "POST",
+  "path": "/resources"
+}

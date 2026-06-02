@@ -1,0 +1,4 @@
+# Python dependencies for User Service.
+fastapi
+uvicorn
+mysql-connector-python

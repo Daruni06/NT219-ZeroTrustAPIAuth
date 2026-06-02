@@ -1,0 +1,2 @@
+# Envoy Gateway configuration.
+# Handles TLS termination, routing, ext_authz checks, and mTLS to backend services.

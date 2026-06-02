@@ -1,0 +1,16 @@
+services: {}
+
+bundles: {}
+
+decision_logs:
+  console: true
+
+default_decision: /zerotrust/authz/allow
+
+server:
+  encoding:
+    gzip:
+      min_length: 1024
+
+# Run locally with:
+# opa run --server --addr localhost:8181 policy/policy.rego

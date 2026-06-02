@@ -1,0 +1,96 @@
+{
+  "realm": "zero-trust",
+  "enabled": true,
+  "displayName": "Zero Trust API Auth",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "sslRequired": "external",
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Regular API user"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator with access to admin APIs"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "demo-client",
+      "name": "Demo DPoP Client",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8765/callback",
+        "http://127.0.0.1:8765/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:8765",
+        "http://127.0.0.1:8765"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "dpop.bound.access.tokens": "true",
+        "access.token.lifespan": "300"
+      },
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "alice@example.test",
+      "firstName": "Alice",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@example.test",
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "user",
+        "admin"
+      ]
+    }
+  ]
+}

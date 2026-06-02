@@ -1,0 +1,2 @@
+-- MySQL schema and sample data for the demo.
+-- Create users, resources, and audit_log tables here.

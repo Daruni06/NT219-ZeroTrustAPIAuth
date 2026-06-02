@@ -1,0 +1,4 @@
+# Python dependencies for Admin Service.
+fastapi
+uvicorn
+mysql-connector-python

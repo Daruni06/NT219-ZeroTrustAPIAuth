@@ -1,0 +1,4 @@
+# Python dependencies for Resource Service.
+fastapi
+uvicorn
+mysql-connector-python

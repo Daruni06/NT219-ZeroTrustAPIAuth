@@ -1,0 +1,16 @@
+# Runtime secrets and environment-specific files
+infra/hosts.env
+gateway/certs/*
+!gateway/certs/.gitkeep
+*.crt
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local tooling
+.env

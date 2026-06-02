@@ -1,0 +1,76 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./identity/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - zerotrust
+
+  opa:
+    image: openpolicyagent/opa:1.4.2
+    command:
+      - run
+      - --server
+      - --addr=0.0.0.0:8181
+      - --set=decision_logs.console=true
+      - /policies/policy.rego
+    ports:
+      - "127.0.0.1:8181:8181"
+    volumes:
+      - ./policy/policy.rego:/policies/policy.rego:ro
+    networks:
+      - zerotrust
+
+  redis:
+    image: redis:7.4-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - zerotrust
+
+  authz:
+    build:
+      context: .
+      dockerfile: authz/Dockerfile
+    environment:
+      AUTHZ_CONFIG_PATH: /app/authz/config.yaml
+      KEYCLOAK_ISSUER: http://keycloak:8080/realms/zero-trust
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/zero-trust/protocol/openid-connect/certs
+      KEYCLOAK_AUDIENCE: demo-client
+      OPA_DECISION_URL: http://opa:8181/v1/data/zerotrust/authz/allow
+      REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: INFO
+    ports:
+      - "127.0.0.1:8090:8090"
+    depends_on:
+      - keycloak
+      - opa
+      - redis
+    networks:
+      - zerotrust
+
+networks:
+  zerotrust:
+
+volumes:
+  keycloak_data:
+  redis_data:

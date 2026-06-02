@@ -1,0 +1,9 @@
+# Python dependencies for the ext_authz service.
+fastapi
+uvicorn
+python-jose[cryptography]
+PyJWT[crypto]
+cryptography
+httpx
+redis
+pyyaml
