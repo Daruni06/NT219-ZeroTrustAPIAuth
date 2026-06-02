@@ -105,34 +105,6 @@ def get_access_token(private_key, public_jwk: dict, username: str, password: str
     return access_token
 
 
-def normalize_token_for_authz(access_token: str) -> str:
-    """
-    Temporary demo fix:
-    Some Keycloak/client configs may return an access token without 'sub'.
-    The current ext_authz expects 'sub', so for demo we create an unsigned
-    copy of the token payload with 'sub' filled from preferred_username.
-    """
-    header = jwt.get_unverified_header(access_token)
-    payload = jwt.decode(access_token, options={"verify_signature": False})
-
-    if "sub" not in payload:
-        fallback_sub = (
-            payload.get("preferred_username")
-            or payload.get("email")
-            or payload.get("azp")
-            or "demo-user"
-        )
-        payload["sub"] = fallback_sub
-        print(f"\n[DEMO FIX] Added missing sub claim: {fallback_sub}")
-
-    return jwt.encode(
-        payload,
-        key="",
-        algorithm="none",
-        headers={"typ": header.get("typ", "JWT"), "alg": "none"},
-    )
-
-
 def verify_with_authz(
     private_key,
     public_jwk: dict,
@@ -186,11 +158,7 @@ def main():
     username = input("Username [alice/admin]: ").strip() or "alice"
     password = input("Password: ").strip()
 
-    real_access_token = get_access_token(private_key, public_jwk, username, password)
-
-    # Use this token for authz verification.
-    # If the real token already has 'sub', it is returned unchanged.
-    access_token = normalize_token_for_authz(real_access_token)
+    access_token = get_access_token(private_key, public_jwk, username, password)
 
     tests = [
         ("GET", "/users", f"{USER_SERVICE_URL}/users"),
