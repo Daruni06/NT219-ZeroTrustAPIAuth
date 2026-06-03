@@ -53,6 +53,7 @@ def create_dpop_proof(
     method: str,
     url: str,
     access_token: Optional[str] = None,
+    nonce: Optional[str] = None,
 ) -> str:
     payload = {
         "jti": str(uuid.uuid4()),
@@ -63,6 +64,9 @@ def create_dpop_proof(
 
     if access_token:
         payload["ath"] = access_token_hash(access_token)
+
+    if nonce:
+        payload["nonce"] = nonce
 
     headers = {
         "typ": "dpop+jwt",
@@ -85,15 +89,32 @@ def get_access_token(private_key, public_jwk: dict, username: str, password: str
     }
 
     last_error = None
+    dpop_nonce = None
     for attempt in range(1, 6):
         dpop = create_dpop_proof(
             private_key=private_key,
             public_jwk=public_jwk,
             method="POST",
             url=token_url,
+            nonce=dpop_nonce,
         )
         try:
-            response = httpx.post(token_url, data=data, headers={"DPoP": dpop}, timeout=10)
+            response = httpx.post(
+                token_url,
+                data=data,
+                headers={"DPoP": dpop, "Connection": "close"},
+                timeout=10,
+                trust_env=False,
+            )
+            next_nonce = response.headers.get("DPoP-Nonce")
+            if next_nonce:
+                dpop_nonce = next_nonce
+
+            if response.status_code in {400, 401} and "use_dpop_nonce" in response.text and dpop_nonce:
+                print(f"\nKeycloak requested DPoP nonce, retrying with nonce attempt {attempt}/5")
+                time.sleep(1)
+                continue
+
             response.raise_for_status()
             break
         except httpx.HTTPStatusError as exc:
