@@ -76,13 +76,6 @@ def create_dpop_proof(
 def get_access_token(private_key, public_jwk: dict, username: str, password: str) -> str:
     token_url = f"{KEYCLOAK_BASE_URL}/realms/{REALM}/protocol/openid-connect/token"
 
-    dpop = create_dpop_proof(
-        private_key=private_key,
-        public_jwk=public_jwk,
-        method="POST",
-        url=token_url,
-    )
-
     data = {
         "grant_type": "password",
         "client_id": CLIENT_ID,
@@ -93,6 +86,12 @@ def get_access_token(private_key, public_jwk: dict, username: str, password: str
 
     last_error = None
     for attempt in range(1, 6):
+        dpop = create_dpop_proof(
+            private_key=private_key,
+            public_jwk=public_jwk,
+            method="POST",
+            url=token_url,
+        )
         try:
             response = httpx.post(token_url, data=data, headers={"DPoP": dpop}, timeout=10)
             response.raise_for_status()
