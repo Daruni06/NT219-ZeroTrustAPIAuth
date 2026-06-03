@@ -1,0 +1,3 @@
+{$DEMO_SITE_ADDRESS::8080} {
+  reverse_proxy demo-web:8080
+}

@@ -163,9 +163,43 @@ services:
     networks:
       - zerotrust
 
+  demo-web:
+    build:
+      context: .
+      dockerfile: demo-web/Dockerfile
+    environment:
+      KEYCLOAK_INTERNAL_BASE_URL: http://keycloak:8080
+      KEYCLOAK_PUBLIC_BASE_URL: http://127.0.0.1:8080
+      GATEWAY_INTERNAL_BASE_URL: http://envoy:10000
+      GATEWAY_PUBLIC_BASE_URL: http://127.0.0.1:10000
+    depends_on:
+      - keycloak
+      - envoy
+    networks:
+      - zerotrust
+
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:8088:8080"
+    environment:
+      DEMO_SITE_ADDRESS: ${DEMO_SITE_ADDRESS:-:8080}
+    volumes:
+      - ./demo-web/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - demo-web
+    networks:
+      - zerotrust
+
 networks:
   zerotrust:
 
 volumes:
   keycloak_data:
   redis_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zero-Trust API Auth Demo</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="topbar">
+        <div>
+          <h1>Zero-Trust API Auth Demo</h1>
+          <p>DPoP token binding, replay protection, OPA policy, Gateway routing, and backend mTLS.</p>
+        </div>
+        <div class="status" id="sessionStatus">Not logged in</div>
+      </section>
+
+      <section class="panel">
+        <h2>Identity</h2>
+        <div class="controls">
+          <button data-login="alice">Login Alice</button>
+          <button data-login="admin">Login Admin</button>
+        </div>
+        <pre id="claimsOutput">Token claims will appear here.</pre>
+      </section>
+
+      <section class="panel">
+        <h2>API Calls Through Gateway</h2>
+        <div class="controls">
+          <button data-call="/users">GET /users</button>
+          <button data-call="/resources">GET /resources</button>
+          <button data-call="/admin/users">GET /admin/users</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Attack Cases</h2>
+        <div class="controls">
+          <button data-attack="missing_dpop">Missing DPoP</button>
+          <button data-attack="wrong_key">Wrong DPoP Key</button>
+          <button data-attack="replay">Replay Same Proof</button>
+          <button data-attack="opa_deny">Alice Admin Deny</button>
+        </div>
+      </section>
+
+      <section class="panel output-panel">
+        <h2>Result</h2>
+        <pre id="resultOutput">Run a demo action.</pre>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
