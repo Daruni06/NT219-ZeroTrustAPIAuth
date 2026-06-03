@@ -11,7 +11,7 @@ DAYS_CA="${DAYS_CA:-365}"
 DAYS_LEAF="${DAYS_LEAF:-30}"
 
 mkdir -p "${CERT_DIR}"
-chmod 700 "${CERT_DIR}"
+chmod 755 "${CERT_DIR}"
 
 write_ext() {
   local name="$1"
@@ -74,7 +74,9 @@ issue_cert "resource-service" "server" "resource-service"
 issue_cert "admin-service" "server" "admin-service"
 
 rm -f "${CERT_DIR}"/*.csr "${CERT_DIR}"/*.ext "${CERT_DIR}/ca.srl"
-chmod 600 "${CERT_DIR}"/*.key
+# Demo containers run as different users, so mounted private keys must be readable.
+# In production, use Docker secrets or chown keys to the exact container UID.
+chmod 644 "${CERT_DIR}"/*.key
 chmod 644 "${CERT_DIR}"/*.crt
 
 cat <<EOF
