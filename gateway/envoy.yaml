@@ -103,6 +103,24 @@ static_resources:
     - name: user_service
       type: STRICT_DNS
       connect_timeout: 2s
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: user-service
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain:
+                  filename: /etc/envoy/certs/envoy-client.crt
+                private_key:
+                  filename: /etc/envoy/certs/envoy-client.key
+            validation_context:
+              trusted_ca:
+                filename: /etc/envoy/certs/ca.crt
+              match_typed_subject_alt_names:
+                - san_type: DNS
+                  matcher:
+                    exact: user-service
       load_assignment:
         cluster_name: user_service
         endpoints:
@@ -116,6 +134,24 @@ static_resources:
     - name: resource_service
       type: STRICT_DNS
       connect_timeout: 2s
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: resource-service
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain:
+                  filename: /etc/envoy/certs/envoy-client.crt
+                private_key:
+                  filename: /etc/envoy/certs/envoy-client.key
+            validation_context:
+              trusted_ca:
+                filename: /etc/envoy/certs/ca.crt
+              match_typed_subject_alt_names:
+                - san_type: DNS
+                  matcher:
+                    exact: resource-service
       load_assignment:
         cluster_name: resource_service
         endpoints:
@@ -129,6 +165,24 @@ static_resources:
     - name: admin_service
       type: STRICT_DNS
       connect_timeout: 2s
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: admin-service
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain:
+                  filename: /etc/envoy/certs/envoy-client.crt
+                private_key:
+                  filename: /etc/envoy/certs/envoy-client.key
+            validation_context:
+              trusted_ca:
+                filename: /etc/envoy/certs/ca.crt
+              match_typed_subject_alt_names:
+                - san_type: DNS
+                  matcher:
+                    exact: admin-service
       load_assignment:
         cluster_name: admin_service
         endpoints:

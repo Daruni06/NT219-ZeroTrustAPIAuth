@@ -5,6 +5,8 @@ gateway/certs/*
 *.crt
 *.key
 *.pem
+pki/certs/*
+!pki/certs/.gitkeep
 
 # Python
 __pycache__/

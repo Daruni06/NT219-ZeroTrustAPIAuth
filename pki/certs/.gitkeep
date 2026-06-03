@@ -1,0 +1,2 @@
+# Runtime PKI files are generated here by pki/setup-pki.sh.
+# Do not commit real certificates or private keys.

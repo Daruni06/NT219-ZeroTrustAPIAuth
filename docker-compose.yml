@@ -1,4 +1,14 @@
 services:
+  vault:
+    image: hashicorp/vault:1.17
+    command: server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "127.0.0.1:8200:8200"
+    networks:
+      - zerotrust
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.4
     command:
@@ -75,6 +85,17 @@ services:
       args:
         SERVICE_DIR: backend/user_service
         APP_MODULE: backend.user_service.main
+    command:
+      - sh
+      - -c
+      - >
+        uvicorn backend.user_service.main:app --host 0.0.0.0 --port 8000
+        --ssl-certfile /certs/user-service.crt
+        --ssl-keyfile /certs/user-service.key
+        --ssl-ca-certs /certs/ca.crt
+        --ssl-cert-reqs 2
+    volumes:
+      - ./pki/certs:/certs:ro
     networks:
       - zerotrust
 
@@ -85,6 +106,17 @@ services:
       args:
         SERVICE_DIR: backend/resource_service
         APP_MODULE: backend.resource_service.main
+    command:
+      - sh
+      - -c
+      - >
+        uvicorn backend.resource_service.main:app --host 0.0.0.0 --port 8000
+        --ssl-certfile /certs/resource-service.crt
+        --ssl-keyfile /certs/resource-service.key
+        --ssl-ca-certs /certs/ca.crt
+        --ssl-cert-reqs 2
+    volumes:
+      - ./pki/certs:/certs:ro
     networks:
       - zerotrust
 
@@ -95,6 +127,17 @@ services:
       args:
         SERVICE_DIR: backend/admin_service
         APP_MODULE: backend.admin_service.main
+    command:
+      - sh
+      - -c
+      - >
+        uvicorn backend.admin_service.main:app --host 0.0.0.0 --port 8000
+        --ssl-certfile /certs/admin-service.crt
+        --ssl-keyfile /certs/admin-service.key
+        --ssl-ca-certs /certs/ca.crt
+        --ssl-cert-reqs 2
+    volumes:
+      - ./pki/certs:/certs:ro
     networks:
       - zerotrust
 
@@ -111,6 +154,7 @@ services:
       - "127.0.0.1:9901:9901"
     volumes:
       - ./gateway/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./pki/certs:/etc/envoy/certs:ro
     depends_on:
       - authz
       - user-service
