@@ -37,14 +37,10 @@ def access_token_hash(access_token: str) -> str:
 
 
 def jwk_thumbprint(jwk: dict[str, Any]) -> str:
-    if jwk.get("kty") == "OKP":
-        members = {"crv": jwk.get("crv"), "kty": jwk.get("kty"), "x": jwk.get("x")}
-    elif jwk.get("kty") == "EC":
-        members = {"crv": jwk.get("crv"), "kty": jwk.get("kty"), "x": jwk.get("x"), "y": jwk.get("y")}
-    elif jwk.get("kty") == "RSA":
-        members = {"e": jwk.get("e"), "kty": jwk.get("kty"), "n": jwk.get("n")}
-    else:
-        raise DPoPVerificationError("unsupported DPoP jwk kty")
+    if jwk.get("kty") != "OKP" or jwk.get("crv") != "Ed25519":
+        raise DPoPVerificationError("DPoP jwk must be OKP Ed25519")
+
+    members = {"crv": jwk.get("crv"), "kty": jwk.get("kty"), "x": jwk.get("x")}
 
     if any(value is None for value in members.values()):
         raise DPoPVerificationError("incomplete DPoP jwk")

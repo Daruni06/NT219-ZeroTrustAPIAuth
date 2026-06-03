@@ -106,7 +106,7 @@ def load_settings(path: str | Path | None = None) -> Settings:
             issuer=os.getenv("KEYCLOAK_ISSUER", keycloak["issuer"]),
             jwks_url=os.getenv("KEYCLOAK_JWKS_URL", keycloak["jwks_url"]),
             audience=os.getenv("KEYCLOAK_AUDIENCE", keycloak["audience"]),
-            algorithms=list(keycloak.get("algorithms", ["RS256"])),
+            algorithms=list(keycloak.get("algorithms", ["EdDSA"])),
             jwks_cache_seconds=int(keycloak.get("jwks_cache_seconds", 300)),
         ),
         dpop=DPoPConfig(

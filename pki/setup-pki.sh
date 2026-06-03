@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Demo PKI for internal mTLS.
-# Generates a local CA, Envoy client certificate, and backend server certificates.
+# Generates an Ed25519 local CA, Envoy client certificate, and backend server certificates.
 # Output goes to pki/certs/ and must not be committed.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -22,14 +22,14 @@ write_ext() {
   if [[ "${type}" == "server" ]]; then
     cat > "${file}" <<EOF
 basicConstraints=CA:FALSE
-keyUsage=digitalSignature,keyEncipherment
+keyUsage=digitalSignature
 extendedKeyUsage=serverAuth
 subjectAltName=DNS:${dns}
 EOF
   else
     cat > "${file}" <<EOF
 basicConstraints=CA:FALSE
-keyUsage=digitalSignature,keyEncipherment
+keyUsage=digitalSignature
 extendedKeyUsage=clientAuth
 subjectAltName=DNS:${dns}
 EOF
@@ -41,7 +41,7 @@ issue_cert() {
   local type="$2"
   local dns="$3"
 
-  openssl genrsa -out "${CERT_DIR}/${name}.key" 2048
+  openssl genpkey -algorithm Ed25519 -out "${CERT_DIR}/${name}.key"
   openssl req -new \
     -key "${CERT_DIR}/${name}.key" \
     -out "${CERT_DIR}/${name}.csr" \
@@ -54,15 +54,13 @@ issue_cert() {
     -CAcreateserial \
     -out "${CERT_DIR}/${name}.crt" \
     -days "${DAYS_LEAF}" \
-    -sha256 \
     -extfile "${CERT_DIR}/${name}.ext"
 }
 
 if [[ ! -f "${CERT_DIR}/ca.crt" || ! -f "${CERT_DIR}/ca.key" ]]; then
-  openssl genrsa -out "${CERT_DIR}/ca.key" 4096
+  openssl genpkey -algorithm Ed25519 -out "${CERT_DIR}/ca.key"
   openssl req -x509 -new -nodes \
     -key "${CERT_DIR}/ca.key" \
-    -sha256 \
     -days "${DAYS_CA}" \
     -out "${CERT_DIR}/ca.crt" \
     -subj "/CN=zero-trust-demo-root-ca"
