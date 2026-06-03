@@ -91,8 +91,25 @@ def get_access_token(private_key, public_jwk: dict, username: str, password: str
         "scope": "openid profile email roles",
     }
 
-    response = httpx.post(token_url, data=data, headers={"DPoP": dpop}, timeout=10)
-    response.raise_for_status()
+    last_error = None
+    for attempt in range(1, 6):
+        try:
+            response = httpx.post(token_url, data=data, headers={"DPoP": dpop}, timeout=10)
+            response.raise_for_status()
+            break
+        except httpx.HTTPStatusError as exc:
+            print("\nKeycloak token request failed")
+            print("Status:", exc.response.status_code)
+            print("Body:", exc.response.text)
+            raise
+        except httpx.HTTPError as exc:
+            last_error = exc
+            print(f"\nKeycloak token request failed, attempt {attempt}/5: {exc}")
+            time.sleep(2)
+    else:
+        raise RuntimeError(
+            "Keycloak token endpoint is not reachable. Check docker compose ps and docker compose logs keycloak."
+        ) from last_error
 
     token_response = response.json()
 

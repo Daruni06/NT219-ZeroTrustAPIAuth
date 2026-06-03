@@ -68,6 +68,57 @@ services:
     networks:
       - zerotrust
 
+  user-service:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        SERVICE_DIR: backend/user_service
+        APP_MODULE: backend.user_service.main
+    networks:
+      - zerotrust
+
+  resource-service:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        SERVICE_DIR: backend/resource_service
+        APP_MODULE: backend.resource_service.main
+    networks:
+      - zerotrust
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        SERVICE_DIR: backend/admin_service
+        APP_MODULE: backend.admin_service.main
+    networks:
+      - zerotrust
+
+  envoy:
+    image: envoyproxy/envoy:v1.32-latest
+    command:
+      - envoy
+      - -c
+      - /etc/envoy/envoy.yaml
+      - --service-cluster
+      - zero-trust-gateway
+    ports:
+      - "127.0.0.1:10000:10000"
+      - "127.0.0.1:9901:9901"
+    volumes:
+      - ./gateway/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      - authz
+      - user-service
+      - resource-service
+      - admin-service
+    networks:
+      - zerotrust
+
 networks:
   zerotrust:
 

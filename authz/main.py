@@ -6,7 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import FastAPI, Header, HTTPException, Request, status
+from fastapi import FastAPI, Header, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
 from .config import Settings, load_settings
@@ -56,6 +56,62 @@ def _request_url(request: Request, body: VerifyRequest) -> str:
     return f"{proto}://{host}{body.path}"
 
 
+async def _authorize_request(
+    *,
+    request: Request,
+    access_token: str,
+    dpop_proof: str | None,
+    method: str,
+    path: str,
+    url: str,
+) -> dict[str, str]:
+    verified_token = request.app.state.jwt_verifier.verify(access_token)
+
+    if settings.dpop.required:
+        verified_dpop = verify_dpop(
+            proof=dpop_proof or "",
+            access_token=access_token,
+            method=method,
+            url=url,
+            token_cnf=verified_token.cnf,
+            config=settings.dpop,
+        )
+        await request.app.state.replay_cache.check_and_store(verified_dpop.jti)
+
+    decision = await request.app.state.opa_client.authorize(
+        user_id=verified_token.subject,
+        username=verified_token.username,
+        roles=verified_token.roles,
+        scopes=verified_token.scopes,
+        method=method,
+        path=path,
+    )
+
+    if not decision.allow:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="OPA denied request")
+
+    header_names = settings.authz.forwarded_identity_headers
+    return {
+        header_names.get("user_id", "x-user-id"): verified_token.subject,
+        header_names.get("username", "x-user-name"): verified_token.username,
+        header_names.get("roles", "x-user-roles"): ",".join(verified_token.roles),
+        header_names.get("scopes", "x-scopes"): " ".join(verified_token.scopes),
+    }
+
+
+def _handle_authz_error(exc: Exception) -> None:
+    if isinstance(exc, HTTPException):
+        raise exc
+    if isinstance(exc, (JWTVerificationError, DPoPVerificationError, ReplayDetectedError)):
+        logger.info("deny: %s", exc)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+    if isinstance(exc, OPADecisionError):
+        logger.error("OPA failure: %s", exc)
+        code = status.HTTP_403_FORBIDDEN if settings.authz.fail_closed else status.HTTP_200_OK
+        raise HTTPException(status_code=code, detail="authorization service unavailable") from exc
+    raise exc
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.jwt_verifier = JWTVerifier(settings.keycloak)
@@ -85,48 +141,50 @@ async def verify(
 
     try:
         access_token = _bearer_token(auth_header)
-        verified_token = request.app.state.jwt_verifier.verify(access_token)
-
-        if settings.dpop.required:
-            verified_dpop = verify_dpop(
-                proof=dpop_proof or "",
-                access_token=access_token,
-                method=body.method,
-                url=_request_url(request, body),
-                token_cnf=verified_token.cnf,
-                config=settings.dpop,
-            )
-            await request.app.state.replay_cache.check_and_store(verified_dpop.jti)
-
-        decision = await request.app.state.opa_client.authorize(
-            user_id=verified_token.subject,
-            username=verified_token.username,
-            roles=verified_token.roles,
-            scopes=verified_token.scopes,
+        identity_headers = await _authorize_request(
+            request=request,
+            access_token=access_token,
+            dpop_proof=dpop_proof,
             method=body.method,
             path=body.path,
+            url=_request_url(request, body),
         )
-    except HTTPException:
-        raise
-    except (JWTVerificationError, DPoPVerificationError, ReplayDetectedError) as exc:
-        logger.info("deny: %s", exc)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
-    except OPADecisionError as exc:
-        logger.error("OPA failure: %s", exc)
-        code = status.HTTP_403_FORBIDDEN if settings.authz.fail_closed else status.HTTP_200_OK
-        raise HTTPException(status_code=code, detail="authorization service unavailable") from exc
+    except Exception as exc:
+        _handle_authz_error(exc)
 
-    if not decision.allow:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="OPA denied request")
-
-    header_names = settings.authz.forwarded_identity_headers
     return VerifyResponse(
         allow=True,
         reason="allowed",
-        headers={
-            header_names.get("user_id", "x-user-id"): verified_token.subject,
-            header_names.get("username", "x-user-name"): verified_token.username,
-            header_names.get("roles", "x-user-roles"): ",".join(verified_token.roles),
-            header_names.get("scopes", "x-scopes"): " ".join(verified_token.scopes),
-        },
+        headers=identity_headers,
     )
+
+
+@app.api_route(
+    "/envoy/authz/{original_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+)
+async def verify_for_envoy(
+    original_path: str,
+    request: Request,
+    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
+    dpop_header: Annotated[str | None, Header(alias="DPoP")] = None,
+) -> Response:
+    path = f"/{original_path}"
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host", "localhost")
+    proto = request.headers.get("x-forwarded-proto", "http")
+    url = f"{proto}://{host}{path}"
+
+    try:
+        access_token = _bearer_token(authorization)
+        identity_headers = await _authorize_request(
+            request=request,
+            access_token=access_token,
+            dpop_proof=dpop_header,
+            method=request.method,
+            path=path,
+            url=url,
+        )
+    except Exception as exc:
+        _handle_authz_error(exc)
+
+    return Response(status_code=status.HTTP_200_OK, headers=identity_headers)
